@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Gambar</title>
+</head>
+<body>
+    <h2>Upload Gambar Kaca Mobil</h2>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="gambarInput" name="gambar" accept="image/*">
+        <input type="button" value="Unggah" onclick="uploadImage()">
+    </form>
+    <div id="hasil"></div>
+
+    <script>
+        function uploadImage() {
+            var form = document.getElementById("uploadForm");
+            var formData = new FormData(form);
+            var xhr = new XMLHttpRequest();
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    document.getElementById("hasil").innerHTML = xhr.responseText;
+                }
+            };
+
+            xhr.open("POST", "/hasil", true);
+            xhr.send(formData);
+        }
+    </script>
+</body>
+</html>

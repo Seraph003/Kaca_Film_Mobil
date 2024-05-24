@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Analisis Kegelapan Kaca Mobil</title>
+</head>
+<body>
+    <h2>Hasil Analisis Kegelapan Kaca Mobil</h2>
+    <img src="{{ image_file }}" alt="Gambar Kaca Mobil">
+    <p>Tingkat Kegelapan: {{ tingkat_kegelapan | round(2) }}%</p>
+    <p>Hasil Klasifikasi Kegelapan: {{ hasil_kegelapan }}</p>
+</body>
+</html>
