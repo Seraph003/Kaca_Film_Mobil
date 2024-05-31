@@ -6,11 +6,14 @@ import os
 app = Flask(__name__)
 
 def cek_tingkat_kegelapan(gambar, kaca_coords):
+
+    """
     # Fungsi untuk menghitung tingkat kegelapan dari gambar yang digunakan sebagai batas
     def hitung_batas_gelap(gambar):
         gray = cv2.cvtColor(gambar, cv2.COLOR_BGR2GRAY)
         kecerahan_rata_rata = cv2.mean(gray)[0]
         return (kecerahan_rata_rata / 255) * 100  # Skala 0-255
+    """
     
     # Konversi gambar ke dalam skala keabuan
     gray = cv2.cvtColor(gambar, cv2.COLOR_BGR2GRAY)
@@ -25,23 +28,34 @@ def cek_tingkat_kegelapan(gambar, kaca_coords):
     # Menghitung tingkat kegelapan sebagai persentase
     tingkat_kegelapan = (kecerahan_rata_rata / 255) * 100  # Skala 0-255
 
+    """
     # Baca gambar yang digunakan sebagai batas
     gambar_batas_gelap = cv2.imread('./batas_gelap.png')  # Ganti dengan nama gambar yang akan digunakan sebagai batas
     batas_gelap = hitung_batas_gelap(gambar_batas_gelap)
+    """
+    
+    batas_gelap = 50
 
     # Klasifikasi kegelapan
     hasil_kegelapan = 'Cukup Terang' if tingkat_kegelapan <= batas_gelap else 'Terlalu Gelap'
 
     # Mengembalikan hasil klasifikasi, tingkat kegelapan, dan gambar kaca yang dipotong
-    return tingkat_kegelapan, hasil_kegelapan, kaca_gray
+    return tingkat_kegelapan, hasil_kegelapan, kaca_gray, batas_gelap
 
-def get_kaca_coords(lines):
-    # Anggap garis-garis teratas dan terbawah adalah batas kaca mobil
-    top_line = lines[0][0] if lines[0][0][1] < lines[1][0][1] else lines[1][0]
-    bottom_line = lines[0][0] if lines[0][0][1] >= lines[1][0][1] else lines[1][0]
+def get_kaca_coords(gambar):
+    # Dapatkan dimensi gambar
+    height, width, _ = gambar.shape
 
-    # Koordinat kaca mobil: (x1, y1, x2, y2)
-    kaca_coords = (top_line[0], top_line[1], bottom_line[2], bottom_line[3])
+    # Tentukan koordinat pusat gambar (misalnya, 50% dari lebar dan tinggi gambar)
+    center_x, center_y = width // 3, height // 3
+    half_width, half_height = width // 5, height // 5  # Sesuaikan ukuran cropping sesuai kebutuhan
+
+    # Tentukan koordinat cropping (area di sekitar pusat gambar)
+    x1 = center_x - half_width
+    x2 = center_x + half_width
+    y1 = center_y - half_height
+    y2 = center_y + half_height
+    kaca_coords = (x1, y1, x2, y2)
     return kaca_coords
 
 @app.route('/')
@@ -58,20 +72,11 @@ def hasil():
     # Baca gambar
     gambar = cv2.imread(file_path)
 
-    # Ubah gambar menjadi skala abu-abu
-    gray = cv2.cvtColor(gambar, cv2.COLOR_BGR2GRAY)
-
-    # Deteksi tepi menggunakan Canny Edge Detection
-    edges = cv2.Canny(gray, 50, 150)
-
-    # Deteksi garis menggunakan Hough Transform
-    lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=50, minLineLength=100, maxLineGap=10)
-
-    # Dapatkan koordinat kaca mobil
-    kaca_coords = get_kaca_coords(lines)
+    # Dapatkan koordinat kaca mobil dengan metode baru
+    kaca_coords = get_kaca_coords(gambar)
 
     # Hitung tingkat kegelapan dan hasil klasifikasi
-    tingkat_kegelapan, hasil_kegelapan, kaca_gray = cek_tingkat_kegelapan(gambar, kaca_coords)
+    tingkat_kegelapan, hasil_kegelapan, kaca_gray, batas_gelap = cek_tingkat_kegelapan(gambar, kaca_coords)
 
     # Simpan gambar kaca yang dipotong
     kaca_file_path = 'static/cropped_window.jpg'
@@ -81,7 +86,8 @@ def hasil():
                            image_file=file_path, 
                            tingkat_kegelapan=tingkat_kegelapan, 
                            hasil_kegelapan=hasil_kegelapan,
-                           kaca_image_file=kaca_file_path)
+                           kaca_image_file=kaca_file_path,
+                           batas_gelap=batas_gelap)
 
 if __name__ == '__main__':
     app.run(debug=True)
