@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request
 import cv2
 import numpy as np
+import os
 
 app = Flask(__name__)
 
@@ -31,8 +32,8 @@ def cek_tingkat_kegelapan(gambar, kaca_coords):
     # Klasifikasi kegelapan
     hasil_kegelapan = 'Cukup Terang' if tingkat_kegelapan <= batas_gelap else 'Terlalu Gelap'
 
-    # Mengembalikan hasil klasifikasi dan tingkat kegelapan
-    return tingkat_kegelapan, hasil_kegelapan
+    # Mengembalikan hasil klasifikasi, tingkat kegelapan, dan gambar kaca yang dipotong
+    return tingkat_kegelapan, hasil_kegelapan, kaca_gray
 
 def get_kaca_coords(lines):
     # Anggap garis-garis teratas dan terbawah adalah batas kaca mobil
@@ -45,7 +46,7 @@ def get_kaca_coords(lines):
 
 @app.route('/')
 def index():
-    return render_template('/index.html')
+    return render_template('index.html')
 
 @app.route('/hasil', methods=['POST'])
 def hasil():
@@ -70,9 +71,17 @@ def hasil():
     kaca_coords = get_kaca_coords(lines)
 
     # Hitung tingkat kegelapan dan hasil klasifikasi
-    tingkat_kegelapan, hasil_kegelapan = cek_tingkat_kegelapan(gambar, kaca_coords)
+    tingkat_kegelapan, hasil_kegelapan, kaca_gray = cek_tingkat_kegelapan(gambar, kaca_coords)
 
-    return render_template('hasil.html', image_file=file_path, tingkat_kegelapan=tingkat_kegelapan, hasil_kegelapan=hasil_kegelapan)
+    # Simpan gambar kaca yang dipotong
+    kaca_file_path = 'static/cropped_window.jpg'
+    cv2.imwrite(kaca_file_path, kaca_gray)
+
+    return render_template('hasil.html', 
+                           image_file=file_path, 
+                           tingkat_kegelapan=tingkat_kegelapan, 
+                           hasil_kegelapan=hasil_kegelapan,
+                           kaca_image_file=kaca_file_path)
 
 if __name__ == '__main__':
     app.run(debug=True)
